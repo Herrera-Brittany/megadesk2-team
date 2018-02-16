@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 
 namespace MegaDesk_3_JTEmerson
 {
@@ -97,39 +98,7 @@ namespace MegaDesk_3_JTEmerson
                 deskQuote.QuoteAmount = quote;
 
                 // add quote to file
-                string quotesFile = @"quotes.txt";
-
-                if (!File.Exists(quotesFile))
-                {
-                    using (StreamWriter streamWriter = File.CreateText(quotesFile))
-                    {
-                        streamWriter.WriteLine(
-                            $"{deskQuote.QuoteDate}," +
-                            $"{deskQuote.CustomerName}," +
-                            $"{deskQuote.Desk.Depth}," +
-                            $"{deskQuote.Desk.Width}," +
-                            $"{deskQuote.Desk.NumberOfDrawers}," +
-                            $"{deskQuote.Desk.Material}," +
-                            $"{deskQuote.RushDays}," +
-                            $"{deskQuote.QuoteAmount}");
-                    }
-
-                }
-                else
-                {
-                    using (StreamWriter streamWriter = File.AppendText(quotesFile))
-                    {
-                        streamWriter.WriteLine(
-                            $"{deskQuote.QuoteDate}," +
-                            $"{deskQuote.CustomerName}," +
-                            $"{deskQuote.Desk.Depth}," +
-                            $"{deskQuote.Desk.Width}," +
-                            $"{deskQuote.Desk.NumberOfDrawers}," +
-                            $"{deskQuote.Desk.Material}," +
-                            $"{deskQuote.RushDays}," +
-                            $"{deskQuote.QuoteAmount}");
-                    }
-                }
+                AddQuoteToFile(deskQuote);
 
                 // show 'DisplayQuote' form
                 DisplayQuote displayQuote = new DisplayQuote(deskQuote);
@@ -186,6 +155,53 @@ namespace MegaDesk_3_JTEmerson
                 }
 
             }
+        }
+
+        private void AddQuoteToFile(DeskQuote deskQuote)
+        {
+            var quotesFile = @"quotes.json";
+            List<DeskQuote> deskQuotes = new List<DeskQuote>();
+
+            // read existing quotes
+            if (File.Exists(quotesFile))
+            {
+                using (StreamReader reader = new StreamReader(quotesFile))
+                {
+                    // load existing quotes
+                    string quotes = reader.ReadToEnd();
+
+                    if (quotes.Length > 0)
+                    {
+                        // deserialize quotes
+                        deskQuotes = JsonConvert.DeserializeObject<List<DeskQuote>>(quotes);
+                    }
+
+                    // add a new quote
+                    deskQuotes.Add(deskQuote);
+                }
+
+                // save to file
+                SaveQuotes(deskQuotes);
+            }
+            else
+            {
+                // create quote list
+                deskQuotes = new List<DeskQuote> { deskQuote };
+
+                // save to file
+                SaveQuotes(deskQuotes);
+            }
+        }
+
+        private void SaveQuotes(List<DeskQuote> quotes)
+        {
+            var quotesFile = @"quotes.json";
+
+            // serilize quotes
+            var serializedQuotes = JsonConvert.SerializeObject(quotes);
+
+            // write quotes to file
+            File.WriteAllText(quotesFile, serializedQuotes);
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 
 namespace MegaDesk_3_JTEmerson
 {
@@ -17,22 +18,17 @@ namespace MegaDesk_3_JTEmerson
         {
             InitializeComponent();
 
-            comboBox1.DataSource = Enum.GetNames(typeof(Material));
+            var materials = new List<Material>();
 
-            dataGridView1.Rows.Clear();
+            materials = Enum.GetValues(typeof(Material))
+                             .Cast<Material>()
+                             .ToList();
 
-            var searchTerm = comboBox1.SelectedValue;
+            comboBox1.DataSource = materials;
 
-            string[] deskQuotes = File.ReadAllLines(@"quotes.txt");
+            comboBox1.SelectedIndex = -1;
 
-            foreach (string deskQuote in deskQuotes)
-            {
-                if (deskQuote.Contains(searchTerm.ToString()))
-                {
-                    string[] arrRow = deskQuote.Split(new char[] { ',' });
-                    dataGridView1.Rows.Add(arrRow);
-                }
-            }
+            loadGrid();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -42,21 +38,69 @@ namespace MegaDesk_3_JTEmerson
             Close();
         }
 
+        private void loadGrid()
+        {
+            var quotesFile = @"quotes.json";
+
+            using (StreamReader reader = new StreamReader(quotesFile))
+            {
+                // load existing quotes
+                string quotes = reader.ReadToEnd();
+                List<DeskQuote> deskQuotes = JsonConvert.DeserializeObject<List<DeskQuote>>(quotes);
+
+                dataGridView1.DataSource = deskQuotes.Select(d => new
+                {
+                    Date = d.QuoteDate,
+                    Customer = d.CustomerName,
+                    Depth = d.Desk.Depth,
+                    Width = d.Desk.Width,
+                    Drawers = d.Desk.NumberOfDrawers,
+                    SurfaceMaterial = d.Desk.Material,
+                    DeliveryType = d.RushDays,
+                    QuoteAmount = d.QuoteAmount
+                }).ToList();
+            }
+        }
+
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            dataGridView1.Rows.Clear();
+            ComboBox combo = (ComboBox)sender;
 
-            var searchTerm = comboBox1.SelectedValue;
-
-            string[] deskQuotes = File.ReadAllLines(@"quotes.txt");
-
-            foreach (string deskQuote in deskQuotes)
+            if (combo.SelectedIndex < 0)
             {
-                if (deskQuote.Contains(searchTerm.ToString()))
+                // reset grid
+                loadGrid();
+            }
+            else
+            {
+                // search grid
+                loadGrid((Material)combo.SelectedValue);
+            }
+        }
+
+        private void loadGrid(Material material)
+        {
+            var quotesFile = @"quotes.json";
+
+            using (StreamReader reader = new StreamReader(quotesFile))
+            {
+                // load existing quotes
+                string quotes = reader.ReadToEnd();
+                List<DeskQuote> deskQuotes = JsonConvert.DeserializeObject<List<DeskQuote>>(quotes);
+
+                dataGridView1.DataSource = deskQuotes.Select(d => new
                 {
-                    string[] arrRow = deskQuote.Split(new char[] { ',' });
-                    dataGridView1.Rows.Add(arrRow);
-                }
+                    Date = d.QuoteDate,
+                    Customer = d.CustomerName,
+                    Depth = d.Desk.Depth,
+                    Width = d.Desk.Width,
+                    Drawers = d.Desk.NumberOfDrawers,
+                    SurfaceMaterial = d.Desk.Material,
+                    DeliveryType = d.RushDays,
+                    QuoteAmount = d.QuoteAmount
+                })
+                .Where(q => q.SurfaceMaterial == material)
+                .ToList();
             }
         }
     }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MegaDesk_3_JTEmerson
 {
-    public class Desk
+    public struct Desk
     {
         public int Width { get; set; }
         public int Depth { get; set; }

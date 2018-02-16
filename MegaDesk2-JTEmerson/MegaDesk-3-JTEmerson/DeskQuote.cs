@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace MegaDesk_3_JTEmerson
 {
@@ -13,7 +15,8 @@ namespace MegaDesk_3_JTEmerson
         public Desk Desk { get; set; }
         public int RushDays { get; set; }
         public decimal QuoteAmount{ get; set; }
-        
+        private int[,] RushDayPrices;
+
         private const int BASE_PRICE = 200;
         private const int SIZE = 1000;
         private const int PRICE_PER_DRAWER = 50;
@@ -69,53 +72,89 @@ namespace MegaDesk_3_JTEmerson
             }
 
             //calculate rush order
+            
             if (deskQuote.RushDays == RUSH1)
             {
+                RushDayPrices = GetRushOrderPrices();
+
                 if (surfaceArea < SIZE)
                 {
-                    rushOrderCost = 60;
+                    rushOrderCost = RushDayPrices[0, 0];
                 }
                 else if (surfaceArea <= RUSH)
                 {
-                    rushOrderCost = 70;
+                    rushOrderCost = RushDayPrices[0, 1];
                 }
                 else
                 {
-                    rushOrderCost = 80;
+                    rushOrderCost = RushDayPrices[0, 2];
                 }
             }
             if (deskQuote.RushDays == RUSH2)
             {
                 if (surfaceArea < SIZE)
                 {
-                    rushOrderCost = 40;
+                    rushOrderCost = RushDayPrices[1, 0];
                 }
                 else if (surfaceArea <= RUSH)
                 {
-                    rushOrderCost = 50;
+                    rushOrderCost = RushDayPrices[1, 1];
                 }
                 else
                 {
-                    rushOrderCost = 60;
+                    rushOrderCost = RushDayPrices[1, 2];
                 }
             }
             if (deskQuote.RushDays == RUSH3)
             {
                 if (surfaceArea < SIZE)
                 {
-                    rushOrderCost = 30;
+                    rushOrderCost = RushDayPrices[2, 0];
                 }
                 else if (surfaceArea <= RUSH)
                 {
-                    rushOrderCost = 30;
+                    rushOrderCost = RushDayPrices[2, 1];
                 }
                 else
                 {
-                    rushOrderCost = 40;
+                    rushOrderCost = RushDayPrices[2, 2];
                 }
             }
 
             return BASE_PRICE + surfaceAreaCost + costOfDrawers + materialCost + rushOrderCost;
+        }
+
+        private int[,] GetRushOrderPrices()
+        {
+            int[,] rushPrices = new int[3, 3];
+            int i = 0, j = 0;
+
+            try
+            {
+                string[] prices = File.ReadAllLines("rushOrderPrices.txt");
+
+                foreach (var price in prices)
+                {
+                    int value;
+                    if (Int32.TryParse(price, out value))
+                    {
+                        rushPrices[i, j] = value;
+                        j++;
+                        if (j > 2)
+                        {
+                            i++;
+                            j = 0;
+                        }
+
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + "Error loading Rush Order Pricing"); // Tell user about the error
+            }
+            return rushPrices;
         }
     }
 }
